@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    fetch('http://localhost:3000/contato', {
+    fetch('https://gatonautas-backend.onrender.com/contato', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nome, email, mensagem })
