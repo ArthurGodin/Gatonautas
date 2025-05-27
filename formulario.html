@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contato - Gatonautas</title>
+  <link rel="stylesheet" href="CSS/style.css" />
+  <script defer src="js/form.js"></script>
+  <script defer src="js/main.js"></script>
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <a href="index.html" class="logo">Gatonautas 🚀🐱</a>
+      <button class="nav-toggle" aria-label="toggle menu">
+        <span class="hamburger"></span>
+      </button>
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link">Início</a></li>
+        <li><a href="produtos.html" class="nav-link">Loja</a></li>
+        <li><a href="institucional.html" class="nav-link">Nossa Missão</a></li>
+        <li><a href="formulario.html" class="nav-link active">Contato</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="form-section">
+      <h1>Envie sua mensagem espacial</h1>
+      <form id="contactForm" novalidate>
+        <label for="name">Nome completo</label>
+        <input type="text" id="name" name="name" placeholder="Seu nome" required />
+
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" placeholder="seu@email.com" required />
+
+        <label for="message">Mensagem</label>
+        <textarea id="message" name="message" rows="5" placeholder="Escreva aqui sua mensagem..." required></textarea>
+
+        <button type="submit" class="btn-primary">Enviar</button>
+      </form>
+      <div id="formMessage" role="alert"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Gatonautas - Missão Espacial. Todos os direitos reservados.</p>
+  </footer>
+</body>
+</html>
