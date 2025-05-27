@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('product-list');
   if (!container) return;
 
-  fetch('http://localhost:3000/produtos')
+  fetch('https://gatonautas-backend.onrender.com')
     .then(response => {
       if (!response.ok) throw new Error('Erro ao carregar produtos');
       return response.json();
