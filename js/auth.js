@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Defina a URL base do seu backend aqui.
     // Mude para 'https://gatonautas-backend.onrender.com' se seu backend atualizado estiver online lá.
-    const BASE_API_URL = 'http://localhost:3000'; // Ou a URL do seu backend de produção
+    const BASE_API_URL = 'https://gatonautas-backend.onrender.com'; // Ou a URL do seu backend de produção
 
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
