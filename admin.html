@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel Administrativo - Gatonautas</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      color: #222;
+      margin: 0;
+      padding: 20px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    h1, h2, h3 {
+      color: #ff6f61;
+    }
+    button {
+      background-color: #ff6f61;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 700;
+      margin-top: 8px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #e65a50;
+    }
+    .logout-btn {
+      float: right;
+      margin-bottom: 20px;
+      background-color: #555;
+    }
+    .logout-btn:hover {
+      background-color: #333;
+    }
+    section {
+      margin-bottom: 40px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .product-item, .contact-item {
+      border-bottom: 1px solid #ddd;
+      padding: 12px 0;
+    }
+    .product-item:last-child, .contact-item:last-child {
+      border-bottom: none;
+    }
+    .product-actions {
+      margin-top: 8px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      resize: vertical;
+    }
+    label {
+      font-weight: 600;
+      color: #ff6f61;
+    }
+  </style>
+</head>
+<body>
+  <button class="logout-btn" id="logoutBtn">Sair</button>
+  <h1>Painel Administrativo</h1>
+
+  <section>
+    <h2>Produtos Cadastrados</h2>
+    <div id="produtosLista">
+      <!-- Lista de produtos aparecerá aqui -->
+    </div>
+
+    <h3>Adicionar Novo Produto</h3>
+    <form id="formAddProduto">
+      <label for="name">Nome</label>
+      <input type="text" id="name" required />
+      
+      <label for="description">Descrição</label>
+      <textarea id="description" rows="2" required></textarea>
+      
+      <label for="price">Preço (ex: 29.90)</label>
+      <input type="number" id="price" step="0.01" required />
+      
+      <label for="image">URL da Imagem</label>
+      <input type="text" id="image" required />
+
+      <button type="submit">Adicionar Produto</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Mensagens Recebidas</h2>
+    <div id="contatosLista">
+      <!-- Lista de mensagens aparecerá aqui -->
+    </div>
+  </section>
+
+<script>
+  const apiBase = 'https://seu-backend.onrender.com'; // troque para sua URL do backend
+  const token = localStorage.getItem('token');
+
+  // Se não tem token, volta para login
+  if (!token) {
+    window.location.href = 'login.html';
+  }
+
+  // Logout
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('token');
+    window.location.href = 'login.html';
+  });
+
+  // Função para carregar produtos
+  async function carregarProdutos() {
+    try {
+      const res = await fetch(`${apiBase}/produtos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Não autorizado');
+
+      const produtos = await res.json();
+      const container = document.getElementById('produtosLista');
+      container.innerHTML = '';
+      
+      if(produtos.length === 0){
+        container.innerHTML = '<p>Nenhum produto cadastrado.</p>';
+        return;
+      }
+
+      produtos.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'product-item';
+        div.innerHTML = `
+          <strong>${p.name}</strong> - R$ ${p.price.toFixed(2)}<br/>
+          ${p.description}<br/>
+          <img src="${p.image}" alt="${p.name}" style="max-width:150px; border-radius:8px; margin-top:5px;" />
+          <div class="product-actions">
+            <button onclick="removerProduto(${p.id})">Remover</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    } catch (error) {
+      alert('Erro ao carregar produtos. Faça login novamente.');
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    }
+  }
+
+  // Remover produto
+  async function removerProduto(id) {
+    if (!confirm('Confirma remoção do produto?')) return;
+    try {
+      const res = await fetch(`${apiBase}/produtos/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Erro na remoção');
+
+      carregarProdutos();
+    } catch (error) {
+      alert('Erro ao remover produto.');
+    }
+  }
+
+  // Adicionar produto
+  document.getElementById('formAddProduto').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('name').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const price = parseFloat(document.getElementById('price').value);
+    const image = document.getElementById('image').value.trim();
+
+    if (!name || !description || !price || !image) {
+      alert('Preencha todos os campos.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiBase}/produtos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, description, price, image })
+      });
+
+      if (!res.ok) throw new Error('Erro ao adicionar produto.');
+
+      document.getElementById('formAddProduto').reset();
+      carregarProdutos();
+    } catch (error) {
+      alert('Erro ao adicionar produto.');
+    }
+  });
+
+  // Carregar mensagens de contato
+  async function carregarContatos() {
+    try {
+      const res = await fetch(`${apiBase}/contatos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Não autorizado');
+
+      const contatos = await res.json();
+      const container = document.getElementById('contatosLista');
+      container.innerHTML = '';
+
+      if(contatos.length === 0){
+        container.innerHTML = '<p>Nenhuma mensagem recebida.</p>';
+        return;
+      }
+
+      contatos.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'contact-item';
+        div.innerHTML = `
+          <strong>${c.nome}</strong> (${c.email})<br/>
+          ${c.mensagem}<br/>
+          <em>Enviado em: ${new Date(c.data).toLocaleString()}</em>
+          <hr/>
+        `;
+        container.appendChild(div);
+      });
+    } catch (error) {
+      alert('Erro ao carregar mensagens. Faça login novamente.');
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    }
+  }
+
+  window.onload = () => {
+    carregarProdutos();
+    carregarContatos();
+  };
+</script>
+</body>
+</html>

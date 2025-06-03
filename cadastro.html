@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alixe-se na Frota! - Gatonautas</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script defer src="js/main.js"></script>
+  <script defer src="js/auth.js"></script>
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <a href="index.html" class="logo">Gatonautas 🚀🐱</a>
+      <button class="nav-toggle" aria-label="toggle menu">
+        <span class="hamburger"></span>
+      </button>
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link">Início</a></li>
+        <li><a href="produtos.html" class="nav-link">Loja</a></li>
+        <li><a href="institucional.html" class="nav-link">Nossa Missão</a></li>
+        <li><a href="formulario.html" class="nav-link">Contato</a></li>
+        <li class="cart-icon-container">
+          <a href="carrinho.html" class="nav-link cart-icon" aria-label="Carrinho">
+            🛒 <span class="cart-count" id="cartCount">0</span>
+          </a>
+        </li>
+        <li><a href="login.html" class="nav-link">Login</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="auth-section">
+      <div class="auth-container">
+        <h1>Junte-se à Tripulação Gaton IX!</h1>
+        <p class="subtitle">Crie sua conta para embarcar nesta aventura intergaláctica e nos ajudar a espalhar ronrons pelo universo!</p>
+        
+        <form id="registerForm" novalidate>
+          <div class="form-group">
+            <label for="registerName">Seu Nome de Gatonauta (ou nome real):</label>
+            <input type="text" id="registerName" name="name" placeholder="Ex: Comandante Whiskers" required />
+          </div>
+
+          <div class="form-group">
+            <label for="registerEmail">Seu E-mail de Contato:</label>
+            <input type="email" id="registerEmail" name="email" placeholder="seuemail@dominio.com" required />
+          </div>
+
+          <div class="form-group">
+            <label for="registerPassword">Crie uma Senha Espacial Secreta:</label>
+            <input type="password" id="registerPassword" name="password" placeholder="Mínimo 8 caracteres" required />
+          </div>
+
+          <div class="form-group">
+            <label for="registerConfirmPassword">Confirme sua Senha:</label>
+            <input type="password" id="registerConfirmPassword" name="confirmPassword" placeholder="Repita a senha" required />
+          </div>
+
+          <button type="submit" class="btn-primary auth-button">Criar Minha Conta Estelar</button>
+        </form>
+        <div id="authMessage" class="form-message" role="alert"></div>
+        <p class="auth-switch">
+          Já possui um crachá da Gaton IX? 
+          <a href="login.html">Faça o login aqui!</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Gatonautas - Missão Espacial. Todos os direitos reservados.</p>
+  </footer>
+</body>
+</html>

@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Loja - Gatonautas</title>
+  <title>Carrinho - Gatonautas</title>
   <link rel="stylesheet" href="css/style.css" />
   <script defer src="js/main.js"></script>
-  <script defer src="js/api.js"></script>
   <script defer src="js/cart.js"></script>
 </head>
 <body>
@@ -18,19 +17,28 @@
       </button>
       <ul class="nav-menu">
         <li><a href="index.html" class="nav-link">Início</a></li>
-        <li><a href="produtos.html" class="nav-link active">Loja</a></li>
+        <li><a href="produtos.html" class="nav-link">Loja</a></li>
         <li><a href="institucional.html" class="nav-link">Nossa Missão</a></li>
         <li><a href="formulario.html" class="nav-link">Contato</a></li>
+        <li class="cart-icon-container">
+          <a href="carrinho.html" class="nav-link cart-icon active" aria-label="Carrinho">
+            🛒 <span class="cart-count" id="cartCount">0</span>
+          </a>
+        </li>
       </ul>
     </nav>
   </header>
 
   <main>
-    <section class="products-section">
-      <h1>Itens para apoiar a missão</h1>
-      <p class="subtitle">Escolha seu item espacial e ajude os Gatonautas a levar ronrons pela galáxia!</p>
-
-      <div id="product-list" class="product-list"></div>
+    <section class="cart-section">
+      <h1>Meu Carrinho Espacial</h1>
+      <div id="cartItemsContainer">
+        <p class="empty-cart-message">Seu carrinho está vazio. Que tal <a href="produtos.html">adicionar alguns itens</a>?</p>
+      </div>
+      <div class="cart-summary" id="cartSummaryContainer" style="display: none;">
+        <h2>Total: <span id="cartTotal">R$ 0.00</span></h2>
+        <button class="btn-primary" onclick="alert('Procedendo para o checkout! (funcionalidade a ser implementada)')">Finalizar Compra</button>
+      </div>
     </section>
   </main>
 
