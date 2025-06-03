@@ -55,36 +55,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            clearMessages();
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearMessages();
 
-            const identifier = loginForm.identifier.value.trim(); // 'name' do input: identifier
-            const password = loginForm.password.value;
-            const isAdminLogin = loginForm.isAdminLogin.checked;
+        const identifier = loginForm.identifier.value.trim();
+        const password = loginForm.password.value;
+        const isAdminLogin = loginForm.isAdminLogin.checked;
 
-            if (!identifier || !password) {
-                showMessage('Informe seu e-mail/usuário e senha para acessar!', 'error');
-                return;
-            }
+        // ... (validações iniciais) ...
+        
+        let loginUrl = '';
+        let requestBody = {};
+
+        if (isAdminLogin) {
+            loginUrl = `${BASE_API_URL}/login`;
+            requestBody = { username: identifier, password };
             
-            if (!isAdminLogin && !validateEmail(identifier)) {
-                showMessage('Formato de e-mail inválido para Gatonauta.', 'error');
-                return;
-            }
+            // ---- NOVO: Logs para Depuração ----
+            console.log('--- TENTATIVA DE LOGIN ADMIN ---');
+            console.log('URL de Destino:', loginUrl);
+            console.log('Identificador (username) Enviado:', identifier);
+            console.log('Senha Enviada:', password); // Cuidado ao logar senhas, remova após depurar
+            console.log('Corpo da Requisição (requestBody):', JSON.stringify(requestBody));
+            // ---- FIM DOS NOVOS Logs ----
 
-            showMessage('Verificando credenciais... Aguarde!', 'info');
-            
-            let loginUrl = '';
-            let requestBody = {};
+        } else {
+            loginUrl = `${BASE_API_URL}/auth/login`;
+            requestBody = { email: identifier, password };
+            // ---- NOVO: Logs para Depuração (Usuário Normal) ----
+            console.log('--- TENTATIVA DE LOGIN USUÁRIO NORMAL ---');
+            console.log('URL de Destino:', loginUrl);
+            console.log('Identificador (email) Enviado:', identifier);
+            console.log('Corpo da Requisição (requestBody):', JSON.stringify(requestBody));
+            // ---- FIM DOS NOVOS Logs ----
+        }
 
-            if (isAdminLogin) {
-                loginUrl = `${BASE_API_URL}/login`; // Rota de admin
-                requestBody = { username: identifier, password }; // Backend admin espera 'username'
-            } else {
-                loginUrl = `${BASE_API_URL}/auth/login`; // Rota de usuário
-                requestBody = { email: identifier, password }; // Backend usuário espera 'email'
-            }
+        showMessage('Verificando credenciais... Aguarde!', 'info');
 
             try {
                 const response = await fetch(loginUrl, {
