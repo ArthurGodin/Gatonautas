@@ -34,17 +34,22 @@
     <section class="auth-section">
       <div class="auth-container">
         <h1>Bem-vindo de Volta, Gatonauta!</h1>
-        <p class="subtitle">Acesse sua conta para continuar acompanhando a missão e suas contribuições espaciais.</p>
+        <p class="subtitle">Acesse sua conta ou entre como administrador.</p>
         
         <form id="loginForm" novalidate>
           <div class="form-group">
-            <label for="loginEmail">Seu E-mail de Gatonauta:</label>
-            <input type="email" id="loginEmail" name="email" placeholder="seuemail@dominio.com" required />
+            <label for="loginIdentifier">Seu E-mail (ou Usuário Admin):</label>
+            <input type="text" id="loginIdentifier" name="identifier" placeholder="seuemail@dominio.com ou 'admin'" required />
           </div>
 
           <div class="form-group">
             <label for="loginPassword">Sua Senha Espacial:</label>
             <input type="password" id="loginPassword" name="password" placeholder="Sua senha" required />
+          </div>
+
+          <div class="form-group" style="text-align: left; margin-bottom: 1.5rem; display: flex; align-items: center;">
+            <input type="checkbox" id="isAdminLogin" name="isAdminLogin" style="width: auto; margin-right: 8px; height: 1em; vertical-align: middle;">
+            <label for="isAdminLogin" style="display: inline; font-weight: normal; margin-bottom: 0;">Entrar como Administrador</label>
           </div>
 
           <button type="submit" class="btn-primary auth-button">Entrar na Nave</button>
