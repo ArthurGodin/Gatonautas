@@ -58,17 +58,20 @@
       margin-top: 8px;
     }
     input, textarea {
-      width: 100%;
+      width: calc(100% - 24px); /* Ajuste para padding */
       padding: 8px 12px;
       margin: 8px 0;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 1rem;
       resize: vertical;
+      box-sizing: border-box; /* Para incluir padding e borda na largura total */
     }
     label {
       font-weight: 600;
       color: #ff6f61;
+      display: block; /* Para garantir que o input fique abaixo */
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -79,8 +82,7 @@
   <section>
     <h2>Produtos Cadastrados</h2>
     <div id="produtosLista">
-      <!-- Lista de produtos aparecerá aqui -->
-    </div>
+      </div>
 
     <h3>Adicionar Novo Produto</h3>
     <form id="formAddProduto">
@@ -103,32 +105,44 @@
   <section>
     <h2>Mensagens Recebidas</h2>
     <div id="contatosLista">
-      <!-- Lista de mensagens aparecerá aqui -->
-    </div>
+      </div>
   </section>
 
 <script>
-  const apiBase = 'https://seu-backend.onrender.com'; // troque para sua URL do backend
-  const token = localStorage.getItem('token');
+  const apiBase = 'https://gatonautas-backend.onrender.com'; // CORRIGIDO
+  const token = localStorage.getItem('token'); // Este token é para o login de ADMIN
 
-  // Se não tem token, volta para login
+  // Se não tem token de admin, volta para login (admin login, não o login de usuário comum)
+  // Assumindo que 'login.html' é a página de login do admin também.
+  // Se for diferente, ajuste o redirecionamento.
   if (!token) {
-    window.location.href = 'login.html';
+    alert('Acesso restrito. Por favor, faça o login como administrador.');
+    window.location.href = 'login.html'; // Ou a página de login específica do admin
   }
 
   // Logout
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem('token');
-    window.location.href = 'login.html';
+    localStorage.removeItem('token'); // Remove o token de admin
+    alert('Logout realizado com sucesso.');
+    window.location.href = 'login.html'; // Ou a página de login específica do admin
   });
 
   // Função para carregar produtos
   async function carregarProdutos() {
     try {
-      const res = await fetch(`${apiBase}/produtos`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch(`${apiBase}/produtos`, { // A rota GET /produtos agora é pública
+        // Para listar no admin, não precisa mais de token se GET /produtos for público.
+        // Se você mantiver GET /produtos protegido SOMENTE para admin, descomente headers.
+        // headers: { Authorization: `Bearer ${token}` } 
       });
-      if (!res.ok) throw new Error('Não autorizado');
+      // Se GET /produtos for pública, o backend não retornará 401 por falta de token.
+      // Mas, se houver outro erro de servidor, o !res.ok ainda é útil.
+      if (!res.ok && res.status !== 401 && res.status !== 403) { // Ignora erros de token se GET é público
+         const errorData = await res.json().catch(() => ({ message: 'Erro desconhecido ao carregar produtos.' }));
+         throw new Error(errorData.message || `Erro HTTP: ${res.status}`);
+      }
+      // Se GET /produtos for público e der 401/403 por algum motivo inesperado (ex: CORS mal configurado no server),
+      // o código abaixo ainda pode falhar. Mas a intenção é que seja público.
 
       const produtos = await res.json();
       const container = document.getElementById('produtosLista');
@@ -143,8 +157,8 @@
         const div = document.createElement('div');
         div.className = 'product-item';
         div.innerHTML = `
-          <strong>${p.name}</strong> - R$ ${p.price.toFixed(2)}<br/>
-          ${p.description}<br/>
+          <strong>${p.name}</strong> - R$ ${p.price ? p.price.toFixed(2) : 'N/A'}<br/>
+          ${p.description || 'Sem descrição.'}<br/>
           <img src="${p.image}" alt="${p.name}" style="max-width:150px; border-radius:8px; margin-top:5px;" />
           <div class="product-actions">
             <button onclick="removerProduto(${p.id})">Remover</button>
@@ -153,39 +167,58 @@
         container.appendChild(div);
       });
     } catch (error) {
-      alert('Erro ao carregar produtos. Faça login novamente.');
-      localStorage.removeItem('token');
-      window.location.href = 'login.html';
+      console.error('Erro ao carregar produtos:', error);
+      // Não redirecionar para login.html aqui, pois GET /produtos deve ser público.
+      // Apenas mostre uma mensagem de erro.
+      document.getElementById('produtosLista').innerHTML = `<p style="color:red;">Erro ao carregar produtos: ${error.message}. Tente recarregar a página.</p>`;
     }
   }
 
-  // Remover produto
+  // Remover produto (requer token)
   async function removerProduto(id) {
     if (!confirm('Confirma remoção do produto?')) return;
+    if (!token) { // Garante que há token para operações de escrita
+        alert('Sessão expirada ou token inválido. Faça login novamente.');
+        window.location.href = 'login.html'; // Ou página de login do admin
+        return;
+    }
     try {
-      const res = await fetch(`${apiBase}/produtos/${id}`, {
+      const res = await fetch(`${apiBase}/produtos/${id}`, { // O backend deve mapear :id para :productId ou vice-versa
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error('Erro na remoção');
-
-      carregarProdutos();
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Erro desconhecido ao remover produto.' }));
+        throw new Error(errorData.message || `Erro HTTP: ${res.status}`);
+      }
+      // alert('Produto removido com sucesso!'); // Opcional
+      carregarProdutos(); // Recarrega a lista
     } catch (error) {
-      alert('Erro ao remover produto.');
+      console.error('Erro ao remover produto:', error);
+      alert(`Erro ao remover produto: ${error.message}`);
+      if (error.message.includes("Token inválido") || error.message.includes("Token não fornecido")) {
+          localStorage.removeItem('token');
+          window.location.href = 'login.html';
+      }
     }
   }
 
-  // Adicionar produto
+  // Adicionar produto (requer token)
   document.getElementById('formAddProduto').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!token) { // Garante que há token para operações de escrita
+        alert('Sessão expirada ou token inválido. Faça login novamente.');
+        window.location.href = 'login.html'; // Ou página de login do admin
+        return;
+    }
 
     const name = document.getElementById('name').value.trim();
     const description = document.getElementById('description').value.trim();
     const price = parseFloat(document.getElementById('price').value);
     const image = document.getElementById('image').value.trim();
 
-    if (!name || !description || !price || !image) {
-      alert('Preencha todos os campos.');
+    if (!name || !description || isNaN(price) || !image) {
+      alert('Preencha todos los campos correctamente.');
       return;
     }
 
@@ -199,22 +232,40 @@
         body: JSON.stringify({ name, description, price, image })
       });
 
-      if (!res.ok) throw new Error('Erro ao adicionar produto.');
-
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Erro desconhecido ao adicionar produto.' }));
+        throw new Error(errorData.message || `Erro HTTP: ${res.status}`);
+      }
+      
+      // alert('Produto adicionado com sucesso!'); // Opcional
       document.getElementById('formAddProduto').reset();
-      carregarProdutos();
+      carregarProdutos(); // Recarrega a lista
     } catch (error) {
-      alert('Erro ao adicionar produto.');
+      console.error('Erro ao adicionar produto:', error);
+      alert(`Erro ao adicionar produto: ${error.message}`);
+      if (error.message.includes("Token inválido") || error.message.includes("Token não fornecido")) {
+          localStorage.removeItem('token');
+          window.location.href = 'login.html';
+      }
     }
   });
 
-  // Carregar mensagens de contato
+  // Carregar mensagens de contato (requer token)
   async function carregarContatos() {
+    if (!token) { // Garante que há token
+        // Não é crítico se as mensagens não carregarem, mas idealmente o admin está logado
+        console.warn('Token de admin não encontrado para carregar contatos.');
+        document.getElementById('contatosLista').innerHTML = '<p>Faça login como administrador para ver as mensagens.</p>';
+        return;
+    }
     try {
-      const res = await fetch(`${apiBase}/contatos`, {
+      const res = await fetch(`${apiBase}/contatos`, { // Assumindo que GET /contatos é protegido
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error('Não autorizado');
+      if (!res.ok) {
+         const errorData = await res.json().catch(() => ({ message: 'Erro desconhecido ao carregar mensagens.' }));
+         throw new Error(errorData.message || `Erro HTTP: ${res.status}`);
+      }
 
       const contatos = await res.json();
       const container = document.getElementById('contatosLista');
@@ -229,23 +280,37 @@
         const div = document.createElement('div');
         div.className = 'contact-item';
         div.innerHTML = `
-          <strong>${c.nome}</strong> (${c.email})<br/>
-          ${c.mensagem}<br/>
-          <em>Enviado em: ${new Date(c.data).toLocaleString()}</em>
-          <hr/>
-        `;
+          <strong>${c.nome || 'Anônimo'}</strong> (${c.email || 'Sem email'})<br/>
+          <p style="white-space: pre-wrap;">${c.mensagem || 'Sem mensagem.'}</p>
+          <em>Enviado em: ${c.data ? new Date(c.data).toLocaleString() : 'Data desconhecida'}</em>
+        `; // Removido <hr/> para consistência com .product-item
         container.appendChild(div);
       });
     } catch (error) {
-      alert('Erro ao carregar mensagens. Faça login novamente.');
-      localStorage.removeItem('token');
-      window.location.href = 'login.html';
+      console.error('Erro ao carregar mensagens:', error);
+      alert(`Erro ao carregar mensagens: ${error.message}. Faça login novamente se o problema persistir.`);
+      // Se o erro for de token, redireciona para o login
+      if (error.message.includes("Token inválido") || error.message.includes("Token não fornecido")) {
+          localStorage.removeItem('token');
+          window.location.href = 'login.html';
+      } else {
+          document.getElementById('contatosLista').innerHTML = `<p style="color:red;">Erro ao carregar mensagens. Tente novamente.</p>`;
+      }
     }
   }
 
+  // Carregar dados ao iniciar a página
   window.onload = () => {
-    carregarProdutos();
-    carregarContatos();
+    if (token) { // Só carrega se houver token de admin
+        carregarProdutos();
+        carregarContatos();
+    } else {
+        // Se não há token, a verificação no topo já deve ter redirecionado.
+        // Mas, por segurança, podemos exibir mensagens indicando a necessidade de login.
+        document.getElementById('produtosLista').innerHTML = '<p>Faça login como administrador para gerenciar produtos.</p>';
+        document.getElementById('contatosLista').innerHTML = '<p>Faça login como administrador para ver as mensagens.</p>';
+        document.getElementById('formAddProduto').style.display = 'none'; // Esconde o formulário de adicionar
+    }
   };
 </script>
 </body>
