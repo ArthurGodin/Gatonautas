@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     setTimeout(() => { window.location.href = 'admin.html'; }, 1500);
                 } else if (!isAdminLogin) {
                     showMessage(data.message || 'Login bem-sucedido! Redirecionando...', 'success');
-                    setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                    setTimeout(() => { window.location.href = 'index2.html'; }, 1500);
                 } else {
                     throw new Error(isAdminLogin ? 'Token de administrador não recebido.' : 'Resposta inesperada do servidor.');
                 }
