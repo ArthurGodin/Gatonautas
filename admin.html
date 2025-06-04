@@ -109,14 +109,18 @@
   </section>
 
 <script>
-  const apiBase = 'https://gatonautas-backend.onrender.com'; // Use sua URL do Render
+  console.log("SCRIPT DO ADMIN.HTML CARREGADO E EXECUTANDO.");
+
+  const apiBase = 'https://gatonautas-backend.onrender.com'; // Sua URL do Render
   const token = localStorage.getItem('token'); // Token de ADMIN
 
+  // Redireciona para login se não houver token e estiver na página admin.html
   if (!token && window.location.pathname.endsWith('admin.html')) {
     alert('Acesso restrito. Por favor, faça o login como administrador.');
     window.location.href = 'login.html'; // Ou a página de login específica do admin
   }
 
+  // Botão de Logout
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
@@ -126,14 +130,94 @@
     });
   }
 
-  // ... (suas funções carregarProdutos, removerProduto, adicionarProduto) ...
-  // Elas continuarão funcionando com o db.json como antes.
+  // Função para carregar produtos (deve estar definida, mesmo que simplificada para este exemplo)
+  // Se esta função não existir no seu escopo global, a chamada em window.onload falhará silenciosamente ou com erro.
+  // Certifique-se de que ela está definida em algum lugar ou remova a chamada se não for usada.
+  async function carregarProdutos() {
+    console.log("[Admin - carregarProdutos] Tentando carregar produtos...");
+    const container = document.getElementById('produtosLista');
+    if (!container) {
+      console.error("[Admin - carregarProdutos] Container 'produtosLista' não encontrado.");
+      return;
+    }
+    // Se GET /produtos for público, não precisa de token aqui.
+    // Se for protegido SOMENTE para admin, precisaria do token.
+    // O backend atual tem GET /produtos como público.
+    try {
+      const res = await fetch(`${apiBase}/produtos`); // GET /produtos é público
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: `Erro HTTP ${res.status} ao carregar produtos.` }));
+        throw new Error(errorData.message);
+      }
+      const produtos = await res.json();
+      container.innerHTML = '';
+      if (!produtos || produtos.length === 0) {
+        container.innerHTML = '<p>Nenhum produto cadastrado.</p>';
+        return;
+      }
+      produtos.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'product-item';
+        div.innerHTML = `
+          <strong>${p.name}</strong> - R$ ${p.price ? p.price.toFixed(2) : 'N/A'}<br/>
+          ${p.description || 'Sem descrição.'}<br/>
+          <img src="${p.image}" alt="${p.name}" style="max-width:150px; border-radius:8px; margin-top:5px;" />
+          <div class="product-actions">
+            <button onclick="removerProduto(${p.id})">Remover</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      console.log("[Admin - carregarProdutos] Produtos carregados e exibidos.");
+    } catch (error) {
+      console.error('[Admin - carregarProdutos] Erro ao carregar produtos:', error);
+      container.innerHTML = `<p style="color:red;">Erro ao carregar produtos: ${error.message}</p>`;
+    }
+  }
+
+  // Função para remover produto (requer token)
+  async function removerProduto(id) {
+    console.log(`[Admin - removerProduto] Tentando remover produto ID: ${id}`);
+    if (!confirm('Confirma remoção do produto?')) {
+      console.log(`[Admin - removerProduto] Remoção cancelada pelo usuário para ID: ${id}`);
+      return;
+    }
+    if (!token) {
+      alert('Sessão expirada ou token inválido para remover produto. Faça login novamente.');
+      window.location.href = 'login.html';
+      return;
+    }
+    try {
+      const res = await fetch(`${apiBase}/produtos/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: `Erro HTTP ${res.status} ao remover produto.` }));
+        throw new Error(errorData.message);
+      }
+      console.log(`[Admin - removerProduto] Produto ID: ${id} removido com sucesso.`);
+      carregarProdutos(); // Recarrega a lista
+    } catch (error) {
+      console.error(`[Admin - removerProduto] Erro ao remover produto ID ${id}:`, error);
+      alert(`Erro ao remover produto: ${error.message}`);
+      if (error.message.includes("Token inválido") || error.message.includes("Token não fornecido")) {
+          localStorage.removeItem('token');
+          window.location.href = 'login.html';
+      }
+    }
+  }
 
   // Carregar mensagens de contato (do db.json via backend)
   async function carregarContatos() {
+    console.log("[Admin - carregarContatos] Tentando carregar contatos...");
+    const contatosListaContainer = document.getElementById('contatosLista');
+    if (!contatosListaContainer) {
+        console.error("[Admin - carregarContatos] Container 'contatosLista' não encontrado.");
+        return;
+    }
     if (!token) {
-        const contatosListaContainer = document.getElementById('contatosLista');
-        if(contatosListaContainer) contatosListaContainer.innerHTML = '<p>Faça login como administrador para ver as mensagens.</p>';
+        contatosListaContainer.innerHTML = '<p>Faça login como administrador para ver as mensagens.</p>';
         return;
     }
     try {
@@ -144,35 +228,27 @@
          const errorData = await res.json().catch(() => ({ message: 'Erro desconhecido ao carregar mensagens.' }));
          throw new Error(errorData.message || `Erro HTTP: ${res.status}`);
       }
-
-      const contatos = await res.json(); // Espera um array [{id, nome, email, mensagem, data, lido?}, ...]
-      const container = document.getElementById('contatosLista');
-      container.innerHTML = '';
+      const contatos = await res.json();
+      contatosListaContainer.innerHTML = '';
 
       if (!contatos || contatos.length === 0) {
-        container.innerHTML = '<p>Nenhuma mensagem recebida ainda.</p>';
+        contatosListaContainer.innerHTML = '<p>Nenhuma mensagem recebida ainda.</p>';
         return;
       }
-
-      // As mensagens já devem vir ordenadas do backend se você usou .sort() lá.
       contatos.forEach(c => {
         const div = document.createElement('div');
         div.className = 'contact-item';
         div.innerHTML = `
           <strong>De: ${c.nome || 'Anônimo'}</strong> (${c.email || 'Sem email'})<br/>
           <p style="white-space: pre-wrap; margin-top: 5px; margin-bottom: 5px;">${c.mensagem || 'Sem mensagem.'}</p>
-          <em>Enviado em: ${c.data ? new Date(c.data).toLocaleString('pt-BR') : 'Data desconhecida'}</em><br/>
-          <em>Status: ${c.lido ? 'Lida' : 'Não lida'}</em>
-        `;
-        container.appendChild(div);
+          <em>Enviado em: ${c.data ? new Date(c.data).toLocaleString('pt-BR') : 'Data desconhecida'}</em>
+        `; // Removida a linha do status "lido"
+        contatosListaContainer.appendChild(div);
       });
+      console.log("[Admin - carregarContatos] Contatos carregados e exibidos.");
     } catch (error) {
-      console.error('Erro ao carregar mensagens de contato:', error);
-      // alert(`Erro ao carregar mensagens: ${error.message}. Faça login novamente se o problema persistir.`);
-      const container = document.getElementById('contatosLista');
-      if (container) {
-        container.innerHTML = `<p style="color:red;">Erro ao carregar mensagens. Tente recarregar a página.</p>`;
-      }
+      console.error('[Admin - carregarContatos] Erro ao carregar mensagens de contato:', error);
+      contatosListaContainer.innerHTML = `<p style="color:red;">Erro ao carregar mensagens. Tente recarregar a página.</p>`;
       if (error.message.includes("Token inválido") || error.message.includes("Token não fornecido")) {
           localStorage.removeItem('token');
           window.location.href = 'login.html';
@@ -180,28 +256,118 @@
     }
   }
 
-  window.onload = () => {
-    if (token && window.location.pathname.endsWith('admin.html')) {
-        // Assumindo que você tem uma função global chamada carregarProdutos
-        if (typeof window.carregarProdutos === 'function') {
-            window.carregarProdutos();
+  // Event Listener para o formulário de adicionar produto
+  const formAddProduto = document.getElementById('formAddProduto');
+  if (formAddProduto) {
+    formAddProduto.addEventListener('submit', async (e) => {
+        console.log("[Admin - formAddProduto] Evento de SUBMIT capturado!");
+        e.preventDefault(); // Impede o recarregamento padrão da página
+
+        if (!token) {
+            alert('Sessão expirada ou token inválido para adicionar produto. Faça login novamente.');
+            window.location.href = 'login.html';
+            return;
         }
+
+        const nameInput = document.getElementById('name');
+        const descriptionInput = document.getElementById('description');
+        const priceInput = document.getElementById('price');
+        const imageInput = document.getElementById('image');
+
+        // Verifica se os inputs existem antes de tentar ler .value
+        if (!nameInput || !descriptionInput || !priceInput || !imageInput) {
+            console.error("[Admin - formAddProduto] Um ou mais campos do formulário não foram encontrados (name, description, price, image).");
+            alert("Erro interno: campos do formulário não encontrados. Verifique os IDs no HTML.");
+            return;
+        }
+
+        const name = nameInput.value.trim();
+        const description = descriptionInput.value.trim();
+        const price = parseFloat(priceInput.value);
+        const image = imageInput.value.trim();
+
+        console.log("[Admin - formAddProduto] Dados do formulário para adicionar:", { name, description, price, image });
+
+        if (!name || !description || isNaN(price) || !image) {
+            alert('Preencha todos os campos corretamente para adicionar o produto.');
+            console.log("[Admin - formAddProduto] Validação do formulário falhou: campos ausentes, vazios ou preço inválido.");
+            return;
+        }
+
+        console.log("[Admin - formAddProduto] Enviando requisição POST para /produtos...");
+        try {
+            const res = await fetch(`${apiBase}/produtos`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ name, description, price, image })
+            });
+
+            console.log("[Admin - formAddProduto] Resposta do fetch recebida. Status:", res.status);
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ message: `Erro HTTP: ${res.status}. Não foi possível processar a resposta de erro do servidor.` }));
+                console.error("[Admin - formAddProduto] Erro ao adicionar produto (resposta não OK):", errorData.message);
+                throw new Error(errorData.message || `Erro HTTP: ${res.status}`);
+            }
+            
+            const produtoAdicionado = await res.json();
+            console.log("[Admin - formAddProduto] Produto adicionado com sucesso (resposta do backend):", produtoAdicionado);
+            
+            formAddProduto.reset();
+            
+            if (typeof carregarProdutos === 'function') { // Chama a função global carregarProdutos
+                console.log("[Admin - formAddProduto] Chamando carregarProdutos() para atualizar a lista...");
+                carregarProdutos();
+            } else {
+                console.warn("[Admin - formAddProduto] Função carregarProdutos() não está definida globalmente para ser chamada.");
+            }
+
+        } catch (error) {
+            console.error('[Admin - formAddProduto] EXCEÇÃO ao tentar adicionar produto:', error);
+            alert(`Erro ao adicionar produto: ${error.message}`);
+            if (error.message && (error.message.includes("Token inválido") || error.message.includes("Token não fornecido"))) {
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+            }
+        }
+    });
+  } else {
+      console.error("ERRO CRÍTICO: Formulário 'formAddProduto' não foi encontrado na página! Verifique o ID no HTML.");
+  }
+
+  // Código a ser executado quando a página carrega completamente
+  window.onload = () => {
+    console.log("[Admin] Window onload disparado.");
+
+    if (token && window.location.pathname.endsWith('admin.html')) {
+        console.log("[Admin] Token encontrado. Carregando dados do admin...");
+        // Chama as funções diretamente, pois elas já estão definidas neste escopo
+        carregarProdutos();
         carregarContatos();
         
-        const formAddProduto = document.getElementById('formAddProduto');
-        if (formAddProduto) {
-            formAddProduto.style.display = '';
+        const formParaAdicionarProduto = document.getElementById('formAddProduto');
+        if (formParaAdicionarProduto) {
+            formParaAdicionarProduto.style.display = ''; // ou 'block', dependendo do seu CSS padrão
+        } else {
+            // O log de erro para formAddProduto não encontrado já acontece antes,
+            // mas podemos adicionar um aviso aqui também se ele não foi encontrado no onload.
+            console.warn("[Admin - onload] Formulário 'formAddProduto' não encontrado para exibir.");
         }
     } else if (window.location.pathname.endsWith('admin.html')) {
+        // Este bloco é alcançado se não há token, mas o redirecionamento no topo do script já deve ter ocorrido.
+        console.log("[Admin] Nenhum token encontrado. Exibindo mensagens de acesso restrito.");
         const produtosListaContainer = document.getElementById('produtosLista');
         if(produtosListaContainer) produtosListaContainer.innerHTML = '<p>Faça login como administrador para gerenciar produtos.</p>';
         
         const contatosListaContainer = document.getElementById('contatosLista');
         if(contatosListaContainer) contatosListaContainer.innerHTML = '<p>Faça login como administrador para ver as mensagens.</p>';
         
-        const formAddProduto = document.getElementById('formAddProduto');
-        if (formAddProduto) {
-            formAddProduto.style.display = 'none';
+        const formParaAdicionarProdutoOnload = document.getElementById('formAddProduto');
+        if (formParaAdicionarProdutoOnload) {
+            formParaAdicionarProdutoOnload.style.display = 'none';
         }
     }
   };
