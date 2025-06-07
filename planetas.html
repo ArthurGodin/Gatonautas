@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Carrinho - Gatonautas</title>
+  <title>Planetas Visitados - Gatonautas</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script defer src="js/planetas.js"></script>
   <script defer src="js/main.js"></script>
-  <script defer src="js/cart.js"></script>
 </head>
 <body>
   <header>
@@ -21,26 +21,33 @@
         <li><a href="institucional.html" class="nav-link">Nossa Missão</a></li>
         <li><a href="formulario.html" class="nav-link">Contato</a></li>
         <li><a href="planetas.html" class="nav-link active">Planetas Salvos</a></li>
-        <li><a href="voluntariado.html" class="nav-link active">Seja Voluntário!</a></li>
+        <li><a href="voluntariado.html" class="nav-link">Seja Voluntário!</a></li>
         <li class="cart-icon-container">
-          <a href="carrinho.html" class="nav-link cart-icon active" aria-label="Carrinho">
+          <a href="carrinho.html" class="nav-link cart-icon" aria-label="Carrinho">
             🛒 <span class="cart-count" id="cartCount">0</span>
           </a>
         </li>
-        <li><a href="login.html" class="nav-link">Login</a></li>
+        <li><a href="login.html" class="nav-link">Login</a></li>     
       </ul>
     </nav>
   </header>
 
   <main>
-    <section class="cart-section">
-      <h1>Meu Carrinho Espacial</h1>
-      <div id="cartItemsContainer">
-        <p class="empty-cart-message">Seu carrinho está vazio. Que tal <a href="produtos.html">adicionar alguns itens</a>?</p>
+    <section class="planets-section">
+      <h1>Galáxia Gatonauta: Planetas Transformados!</h1>
+      <p class="subtitle">Explore os mundos que nossa tripulação ajudou a ronronar de volta à vida.</p>
+
+      <div id="star-map-container" class="star-map-container">
+        <img src="materiais/galaxia_fundo.jpeg" alt="Mapa da Galáxia" class="star-map-background"/>
       </div>
-      <div class="cart-summary" id="cartSummaryContainer" style="display: none;">
-        <h2>Total: <span id="cartTotal">R$ 0.00</span></h2>
-        <button class="btn-primary" onclick="alert('Procedendo para o checkout! (funcionalidade a ser implementada)')">Finalizar Compra</button>
+
+      <div id="planet-details-display" class="planet-details-display" style="display:none;">
+        {/* Detalhes do planeta selecionado aparecerão aqui */}
+      </div>
+
+      <h2>Registro das Missões:</h2>
+      <div id="planet-list-container" class="planet-list">
+        <div class="loader"></div> {/* Loader inicial */}
       </div>
     </section>
   </main>
