@@ -1077,3 +1077,118 @@ footer {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.planet-card.highlight {
+  box-shadow: 0 0 15px 5px rgba(255, 111, 97, 0.7);
+  transform: scale(1.02);
+  transition: all 0.3s ease-in-out;
+}
+
+
+/* Estilos para o Slider de Comparação de Imagens */
+.comparison-slider {
+  position: relative;
+  width: 100%;
+  max-width: 500px; /* Limita a largura máxima do slider */
+  margin: 1rem auto;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+}
+.comparison-slider img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none; /* Impede que a imagem interfira no arrastar */
+}
+.comparison-slider .image-before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 50%; /* Começa mostrando metade */
+  overflow: hidden;
+  z-index: 1;
+}
+.comparison-slider .slider-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 100%;
+  background-color: white;
+  cursor: ew-resize; /* Cursor de arrastar horizontal */
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.comparison-slider .slider-handle::after {
+  content: '↔';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  color: #ff6f61;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+
+/* Estilos para a Página Diário de Bordo */
+.journal-section {
+  max-width: 800px;
+  margin: 3rem auto;
+  padding: 0 1rem;
+}
+.journal-section h1 {
+  text-align: center;
+  font-size: 2.8rem;
+  color: #ff6f61;
+  margin-bottom: 0.5rem;
+}
+.journal-section .subtitle {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #555;
+  margin-bottom: 3rem;
+  font-style: italic;
+}
+.journal-entry {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.07);
+  margin-bottom: 2.5rem;
+  overflow: hidden; /* Para a imagem se ajustar aos cantos arredondados */
+}
+.journal-image {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+.journal-content {
+  padding: 2rem 2.5rem;
+}
+.journal-title {
+  font-size: 2.2rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+.journal-meta {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+.journal-body {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #343a40;
+}

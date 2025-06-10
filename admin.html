@@ -32,6 +32,12 @@
     button:hover {
       background-color: #e65a50;
     }
+    .delete-btn {
+        background-color: #dc3545;
+    }
+    .delete-btn:hover {
+        background-color: #c82333;
+    }
     .logout-btn {
       float: right;
       margin-bottom: 20px;
@@ -47,30 +53,30 @@
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-    .product-item, .contact-item {
+    .item-block { /* Classe genérica para produto, contato, diario */
       border-bottom: 1px solid #ddd;
       padding: 12px 0;
     }
-    .product-item:last-child, .contact-item:last-child {
+    .item-block:last-child {
       border-bottom: none;
     }
-    .product-actions {
+    .item-actions {
       margin-top: 8px;
     }
     input, textarea {
-      width: calc(100% - 24px); /* Ajuste para padding */
+      width: 100%;
       padding: 8px 12px;
       margin: 8px 0;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 1rem;
       resize: vertical;
-      box-sizing: border-box; /* Para incluir padding e borda na largura total */
+      box-sizing: border-box;
     }
     label {
       font-weight: 600;
       color: #ff6f61;
-      display: block; /* Para garantir que o input fique abaixo */
+      display: block;
       margin-top: 10px;
     }
   </style>
@@ -78,6 +84,29 @@
 <body>
   <button class="logout-btn" id="logoutBtn">Sair</button>
   <h1>Painel Administrativo</h1>
+
+  <section>
+    <h2>Gerenciar Diário de Bordo</h2>
+    <div id="diarioLista">
+      </div>
+
+    <h3>Adicionar Nova Entrada no Diário</h3>
+    <form id="formAddDiario">
+      <label for="diarioTitulo">Título</label>
+      <input type="text" id="diarioTitulo" required />
+      
+      <label for="diarioAutor">Autor (Ex: Comandante Miau Zeta)</label>
+      <input type="text" id="diarioAutor" required />
+
+      <label for="diarioConteudo">Conteúdo</label>
+      <textarea id="diarioConteudo" rows="5" required></textarea>
+      
+      <label for="diarioImagem">URL da Imagem (Opcional)</label>
+      <input type="text" id="diarioImagem" />
+
+      <button type="submit">Adicionar Entrada</button>
+    </form>
+  </section>
 
   <section>
     <h2>Produtos Cadastrados</h2>
@@ -111,13 +140,13 @@
 <script>
   console.log("SCRIPT DO ADMIN.HTML CARREGADO E EXECUTANDO.");
 
-  const apiBase = 'https://gatonautas-backend.onrender.com'; // Sua URL do Render
-  const token = localStorage.getItem('token'); // Token de ADMIN
+  const apiBase = 'https://gatonautas-backend.onrender.com';
+  const token = localStorage.getItem('token');
 
-  // Redireciona para login se não houver token e estiver na página admin.html
+  // Redireciona para login se não houver token
   if (!token && window.location.pathname.endsWith('admin.html')) {
     alert('Acesso restrito. Por favor, faça o login como administrador.');
-    window.location.href = 'login.html'; // Ou a página de login específica do admin
+    window.location.href = 'login.html';
   }
 
   // Botão de Logout
@@ -126,29 +155,18 @@
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('token');
       alert('Logout realizado com sucesso.');
-      window.location.href = 'login.html'; // Ou a página de login específica do admin
+      window.location.href = 'login.html';
     });
   }
 
-  // Função para carregar produtos (deve estar definida, mesmo que simplificada para este exemplo)
-  // Se esta função não existir no seu escopo global, a chamada em window.onload falhará silenciosamente ou com erro.
-  // Certifique-se de que ela está definida em algum lugar ou remova a chamada se não for usada.
+  // --- FUNÇÕES DE CARREGAMENTO DE DADOS ---
+  
   async function carregarProdutos() {
-    console.log("[Admin - carregarProdutos] Tentando carregar produtos...");
     const container = document.getElementById('produtosLista');
-    if (!container) {
-      console.error("[Admin - carregarProdutos] Container 'produtosLista' não encontrado.");
-      return;
-    }
-    // Se GET /produtos for público, não precisa de token aqui.
-    // Se for protegido SOMENTE para admin, precisaria do token.
-    // O backend atual tem GET /produtos como público.
+    if (!container) return;
     try {
-      const res = await fetch(`${apiBase}/produtos`); // GET /produtos é público
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ message: `Erro HTTP ${res.status} ao carregar produtos.` }));
-        throw new Error(errorData.message);
-      }
+      const res = await fetch(`${apiBase}/produtos`);
+      if (!res.ok) throw new Error('Falha ao carregar produtos');
       const produtos = await res.json();
       container.innerHTML = '';
       if (!produtos || produtos.length === 0) {
@@ -157,218 +175,178 @@
       }
       produtos.forEach(p => {
         const div = document.createElement('div');
-        div.className = 'product-item';
+        div.className = 'item-block';
         div.innerHTML = `
           <strong>${p.name}</strong> - R$ ${p.price ? p.price.toFixed(2) : 'N/A'}<br/>
-          ${p.description || 'Sem descrição.'}<br/>
-          <img src="${p.image}" alt="${p.name}" style="max-width:150px; border-radius:8px; margin-top:5px;" />
-          <div class="product-actions">
-            <button onclick="removerProduto(${p.id})">Remover</button>
+          <small>${p.description || 'Sem descrição.'}</small><br/>
+          <img src="${p.image}" alt="${p.name}" style="max-width:100px; border-radius:8px; margin-top:5px;" />
+          <div class="item-actions">
+            <button class="delete-btn" onclick="removerProduto(${p.id})">Remover</button>
           </div>
         `;
         container.appendChild(div);
       });
-      console.log("[Admin - carregarProdutos] Produtos carregados e exibidos.");
     } catch (error) {
-      console.error('[Admin - carregarProdutos] Erro ao carregar produtos:', error);
       container.innerHTML = `<p style="color:red;">Erro ao carregar produtos: ${error.message}</p>`;
     }
   }
 
-  // Função para remover produto (requer token)
+  async function carregarContatos() {
+    const container = document.getElementById('contatosLista');
+    if (!container) return;
+    try {
+      const res = await fetch(`${apiBase}/contatos`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Falha ao carregar contatos');
+      const contatos = await res.json();
+      container.innerHTML = '';
+      if (!contatos || contatos.length === 0) {
+        container.innerHTML = '<p>Nenhuma mensagem recebida ainda.</p>';
+        return;
+      }
+      contatos.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'item-block';
+        div.innerHTML = `
+          <strong>De: ${c.nome || 'Anônimo'}</strong> (${c.email || 'Sem email'})<br/>
+          <p style="white-space: pre-wrap; margin-top: 5px; margin-bottom: 5px;">${c.mensagem || 'Sem mensagem.'}</p>
+          <em>Enviado em: ${c.data ? new Date(c.data).toLocaleString('pt-BR') : 'Data desconhecida'}</em>
+        `;
+        container.appendChild(div);
+      });
+    } catch (error) {
+      container.innerHTML = `<p style="color:red;">Erro ao carregar mensagens: ${error.message}</p>`;
+    }
+  }
+  
+  async function carregarDiario() {
+    const container = document.getElementById('diarioLista');
+    if (!container) return;
+    try {
+        const res = await fetch(`${apiBase}/diario`);
+        if (!res.ok) throw new Error('Falha ao carregar diário');
+        const posts = await res.json();
+        container.innerHTML = '';
+         if (!posts || posts.length === 0) {
+            container.innerHTML = '<p>Nenhuma entrada no diário cadastrada.</p>';
+            return;
+        }
+        posts.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'item-block';
+            div.innerHTML = `
+                <strong>${p.titulo}</strong><br/>
+                <small>Por: ${p.autor} em ${new Date(p.data).toLocaleDateString('pt-BR')}</small>
+                <div class="item-actions">
+                    <button class="delete-btn" onclick="removerDiario(${p.id})">Remover</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    } catch (error) {
+        container.innerHTML = `<p style="color:red;">Erro ao carregar diário: ${error.message}</p>`;
+    }
+  }
+
+  // --- FUNÇÕES DE REMOÇÃO ---
+
   async function removerProduto(id) {
-    console.log(`[Admin - removerProduto] Tentando remover produto ID: ${id}`);
-    if (!confirm('Confirma remoção do produto?')) {
-      console.log(`[Admin - removerProduto] Remoção cancelada pelo usuário para ID: ${id}`);
-      return;
-    }
-    if (!token) {
-      alert('Sessão expirada ou token inválido para remover produto. Faça login novamente.');
-      window.location.href = 'login.html';
-      return;
-    }
+    if (!confirm('Confirma remoção do produto?')) return;
     try {
       const res = await fetch(`${apiBase}/produtos/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ message: `Erro HTTP ${res.status} ao remover produto.` }));
-        throw new Error(errorData.message);
-      }
-      console.log(`[Admin - removerProduto] Produto ID: ${id} removido com sucesso.`);
-      carregarProdutos(); // Recarrega a lista
+      if (!res.ok) throw new Error('Falha ao remover produto.');
+      carregarProdutos();
     } catch (error) {
-      console.error(`[Admin - removerProduto] Erro ao remover produto ID ${id}:`, error);
       alert(`Erro ao remover produto: ${error.message}`);
-      if (error.message.includes("Token inválido") || error.message.includes("Token não fornecido")) {
-          localStorage.removeItem('token');
-          window.location.href = 'login.html';
-      }
     }
   }
 
-  // Carregar mensagens de contato (do db.json via backend)
-  async function carregarContatos() {
-    console.log("[Admin - carregarContatos] Tentando carregar contatos...");
-    const contatosListaContainer = document.getElementById('contatosLista');
-    if (!contatosListaContainer) {
-        console.error("[Admin - carregarContatos] Container 'contatosLista' não encontrado.");
-        return;
-    }
-    if (!token) {
-        contatosListaContainer.innerHTML = '<p>Faça login como administrador para ver as mensagens.</p>';
-        return;
-    }
+  async function removerDiario(id) {
+    if (!confirm('Confirma remoção desta entrada do diário?')) return;
     try {
-      const res = await fetch(`${apiBase}/contatos`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) {
-         const errorData = await res.json().catch(() => ({ message: 'Erro desconhecido ao carregar mensagens.' }));
-         throw new Error(errorData.message || `Erro HTTP: ${res.status}`);
-      }
-      const contatos = await res.json();
-      contatosListaContainer.innerHTML = '';
-
-      if (!contatos || contatos.length === 0) {
-        contatosListaContainer.innerHTML = '<p>Nenhuma mensagem recebida ainda.</p>';
-        return;
-      }
-      contatos.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'contact-item';
-        div.innerHTML = `
-          <strong>De: ${c.nome || 'Anônimo'}</strong> (${c.email || 'Sem email'})<br/>
-          <p style="white-space: pre-wrap; margin-top: 5px; margin-bottom: 5px;">${c.mensagem || 'Sem mensagem.'}</p>
-          <em>Enviado em: ${c.data ? new Date(c.data).toLocaleString('pt-BR') : 'Data desconhecida'}</em>
-        `; // Removida a linha do status "lido"
-        contatosListaContainer.appendChild(div);
-      });
-      console.log("[Admin - carregarContatos] Contatos carregados e exibidos.");
+        const res = await fetch(`${apiBase}/diario/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Falha ao remover entrada do diário.');
+        carregarDiario();
     } catch (error) {
-      console.error('[Admin - carregarContatos] Erro ao carregar mensagens de contato:', error);
-      contatosListaContainer.innerHTML = `<p style="color:red;">Erro ao carregar mensagens. Tente recarregar a página.</p>`;
-      if (error.message.includes("Token inválido") || error.message.includes("Token não fornecido")) {
-          localStorage.removeItem('token');
-          window.location.href = 'login.html';
-      }
+        alert(`Erro ao remover entrada: ${error.message}`);
     }
   }
 
-  // Event Listener para o formulário de adicionar produto
+  // --- EVENT LISTENERS DOS FORMULÁRIOS ---
+
   const formAddProduto = document.getElementById('formAddProduto');
   if (formAddProduto) {
     formAddProduto.addEventListener('submit', async (e) => {
-        console.log("[Admin - formAddProduto] Evento de SUBMIT capturado!");
-        e.preventDefault(); // Impede o recarregamento padrão da página
-
-        if (!token) {
-            alert('Sessão expirada ou token inválido para adicionar produto. Faça login novamente.');
-            window.location.href = 'login.html';
-            return;
-        }
-
-        const nameInput = document.getElementById('name');
-        const descriptionInput = document.getElementById('description');
-        const priceInput = document.getElementById('price');
-        const imageInput = document.getElementById('image');
-
-        // Verifica se os inputs existem antes de tentar ler .value
-        if (!nameInput || !descriptionInput || !priceInput || !imageInput) {
-            console.error("[Admin - formAddProduto] Um ou mais campos do formulário não foram encontrados (name, description, price, image).");
-            alert("Erro interno: campos do formulário não encontrados. Verifique os IDs no HTML.");
-            return;
-        }
-
-        const name = nameInput.value.trim();
-        const description = descriptionInput.value.trim();
-        const price = parseFloat(priceInput.value);
-        const image = imageInput.value.trim();
-
-        console.log("[Admin - formAddProduto] Dados do formulário para adicionar:", { name, description, price, image });
-
+        e.preventDefault();
+        const name = document.getElementById('name').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const price = parseFloat(document.getElementById('price').value);
+        const image = document.getElementById('image').value.trim();
         if (!name || !description || isNaN(price) || !image) {
-            alert('Preencha todos os campos corretamente para adicionar o produto.');
-            console.log("[Admin - formAddProduto] Validação do formulário falhou: campos ausentes, vazios ou preço inválido.");
+            alert('Preencha todos os campos do produto corretamente.');
             return;
         }
-
-        console.log("[Admin - formAddProduto] Enviando requisição POST para /produtos...");
         try {
             const res = await fetch(`${apiBase}/produtos`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ name, description, price, image })
             });
-
-            console.log("[Admin - formAddProduto] Resposta do fetch recebida. Status:", res.status);
-
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({ message: `Erro HTTP: ${res.status}. Não foi possível processar a resposta de erro do servidor.` }));
-                console.error("[Admin - formAddProduto] Erro ao adicionar produto (resposta não OK):", errorData.message);
-                throw new Error(errorData.message || `Erro HTTP: ${res.status}`);
-            }
-            
-            const produtoAdicionado = await res.json();
-            console.log("[Admin - formAddProduto] Produto adicionado com sucesso (resposta do backend):", produtoAdicionado);
-            
+            if (!res.ok) throw new Error('Erro do servidor ao adicionar produto.');
             formAddProduto.reset();
-            
-            if (typeof carregarProdutos === 'function') { // Chama a função global carregarProdutos
-                console.log("[Admin - formAddProduto] Chamando carregarProdutos() para atualizar a lista...");
-                carregarProdutos();
-            } else {
-                console.warn("[Admin - formAddProduto] Função carregarProdutos() não está definida globalmente para ser chamada.");
-            }
-
+            carregarProdutos();
         } catch (error) {
-            console.error('[Admin - formAddProduto] EXCEÇÃO ao tentar adicionar produto:', error);
             alert(`Erro ao adicionar produto: ${error.message}`);
-            if (error.message && (error.message.includes("Token inválido") || error.message.includes("Token não fornecido"))) {
-                localStorage.removeItem('token');
-                window.location.href = 'login.html';
-            }
         }
     });
-  } else {
-      console.error("ERRO CRÍTICO: Formulário 'formAddProduto' não foi encontrado na página! Verifique o ID no HTML.");
+  }
+  
+  const formAddDiario = document.getElementById('formAddDiario');
+  if (formAddDiario) {
+    formAddDiario.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const titulo = document.getElementById('diarioTitulo').value.trim();
+        const autor = document.getElementById('diarioAutor').value.trim();
+        const conteudo = document.getElementById('diarioConteudo').value.trim();
+        const imagem_url = document.getElementById('diarioImagem').value.trim();
+        if (!titulo || !autor || !conteudo) {
+            alert('Preencha Título, Autor e Conteúdo para a entrada do diário.');
+            return;
+        }
+        try {
+            const res = await fetch(`${apiBase}/diario`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ titulo, autor, conteudo, imagem_url })
+            });
+            if (!res.ok) throw new Error('Erro do servidor ao adicionar entrada.');
+            formAddDiario.reset();
+            carregarDiario();
+        } catch (error) {
+            alert(`Erro ao adicionar entrada: ${error.message}`);
+        }
+    });
   }
 
-  // Código a ser executado quando a página carrega completamente
+  // --- CÓDIGO A SER EXECUTADO QUANDO A PÁGINA CARREGA ---
+  
   window.onload = () => {
     console.log("[Admin] Window onload disparado.");
-
-    if (token && window.location.pathname.endsWith('admin.html')) {
-        console.log("[Admin] Token encontrado. Carregando dados do admin...");
-        // Chama as funções diretamente, pois elas já estão definidas neste escopo
+    if (token) {
+        console.log("[Admin] Token encontrado. Carregando todos os dados do admin...");
         carregarProdutos();
         carregarContatos();
-        
-        const formParaAdicionarProduto = document.getElementById('formAddProduto');
-        if (formParaAdicionarProduto) {
-            formParaAdicionarProduto.style.display = ''; // ou 'block', dependendo do seu CSS padrão
-        } else {
-            // O log de erro para formAddProduto não encontrado já acontece antes,
-            // mas podemos adicionar um aviso aqui também se ele não foi encontrado no onload.
-            console.warn("[Admin - onload] Formulário 'formAddProduto' não encontrado para exibir.");
-        }
-    } else if (window.location.pathname.endsWith('admin.html')) {
-        // Este bloco é alcançado se não há token, mas o redirecionamento no topo do script já deve ter ocorrido.
-        console.log("[Admin] Nenhum token encontrado. Exibindo mensagens de acesso restrito.");
-        const produtosListaContainer = document.getElementById('produtosLista');
-        if(produtosListaContainer) produtosListaContainer.innerHTML = '<p>Faça login como administrador para gerenciar produtos.</p>';
-        
-        const contatosListaContainer = document.getElementById('contatosLista');
-        if(contatosListaContainer) contatosListaContainer.innerHTML = '<p>Faça login como administrador para ver as mensagens.</p>';
-        
-        const formParaAdicionarProdutoOnload = document.getElementById('formAddProduto');
-        if (formParaAdicionarProdutoOnload) {
-            formParaAdicionarProdutoOnload.style.display = 'none';
-        }
+        carregarDiario();
+    } else {
+        // O redirecionamento no topo do script já deve ter ocorrido,
+        // mas escondemos os formulários de adição por segurança.
+        if(formAddProduto) formAddProduto.style.display = 'none';
+        if(formAddDiario) formAddDiario.style.display = 'none';
     }
   };
 </script>
